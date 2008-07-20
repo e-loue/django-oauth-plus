@@ -378,7 +378,7 @@ as key)::
 
     >>> import oauth.oauth as oauth
     >>> oauth_request = oauth.OAuthRequest.from_token_and_callback(access_token,
-    ...                     http_url='/oauth/photo/', parameters=parameters)
+    ...     http_url='http://testserver/oauth/photo/', parameters=parameters)
     >>> signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
     >>> signature = signature_method.build_signature(oauth_request, consumer, 
     ...                                                 access_token)
@@ -404,7 +404,7 @@ Otherwise, an explicit error will be raised::
     >>> response.status_code
     401
     >>> response.content
-    'Invalid signature. Expected signature base string: GET&%2Foauth%2Fphoto%2F&oauth_consumer_key%3D...'
+    'Invalid signature. Expected signature base string: GET&http%3A%2F%2F...%2Foauth%2Fphoto%2F&oauth_...'
 
     >>> response = c.get("/oauth/photo/")
     >>> response.status_code

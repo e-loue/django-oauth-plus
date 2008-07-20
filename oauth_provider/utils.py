@@ -10,7 +10,7 @@ OAUTH_REALM_KEY_NAME = 'OAUTH_REALM_KEY_NAME'
 def initialize_server_request(request):
     """Shortcut for initialization."""
     oauth_request = oauth.OAuthRequest.from_request(request.method, 
-                                                    request.path, 
+                                                    request.build_absolute_uri(), 
                                                     headers=request.META,
                                                     parameters=dict(request.REQUEST.items()),
                                                     query_string=request.environ.get('QUERY_STRING', ''))

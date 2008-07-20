@@ -155,7 +155,9 @@ class OAuthRequest(object):
 
     # parses the url and rebuilds it to be scheme://host/path
     def get_normalized_http_url(self):
-        parts = urlparse.urlparse(self.http_url)
+        # We remove the webcal:// part because otherwise we can't compare it 
+        # to the requested URL (Django doesn't handle that in request object)
+        parts = urlparse.urlparse(self.http_url.replace('webcal://', 'http://'))
         if parts[0] and parts[1]:
             url_string = '%s://%s%s' % (parts[0], parts[1], parts[2]) # scheme, netloc, path
         else:
