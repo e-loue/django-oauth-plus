@@ -57,7 +57,7 @@ class CheckOAuth(object):
             and 'oauth_nonce' in params
 
     @staticmethod
-    def validate_token(request, check_nonce=True):
-        oauth_server, oauth_request = initialize_server_request(request, check_nonce)
-        return oauth_server.verify_request(oauth_request)
+    def validate_token(request, check_timestamp=True, check_nonce=True):
+        oauth_server, oauth_request = initialize_server_request(request)
+        return oauth_server.verify_request(oauth_request, check_timestamp, check_nonce)
         

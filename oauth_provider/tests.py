@@ -11,6 +11,12 @@ methodology for API authentication.
 
 .. _`OAuth protocol`: http://oauth.net/core/1.0/
 
+.. warning::
+    At this early stage of the development, feedback is really appreciated.
+    Do not hesitate to send an email or a patch if you've got any issue with 
+    the current implementation.
+
+
 Authenticating with OAuth
 =========================
 
@@ -62,7 +68,8 @@ URLs::
         url(r'^oauth/', include('oauth_provider.urls'))
     )
 
-Note: The ``oauth`` prefix is not required, you can specify whatever you want.
+.. note::
+    The ``oauth`` prefix is not required, you can specify whatever you want.
 
 As a provider, you probably need to customize the view you display to the user
 in order to allow access. The ``OAUTH_AUTHORIZE_VIEW`` setting allow you to
@@ -71,11 +78,12 @@ specify this view, for instance::
     # settings.py
     OAUTH_AUTHORIZE_VIEW = 'myapp.views.oauth_authorize'
 
-Note: This implementation set an ``oauth`` flag in session which certify that 
-the validation had been done by the current user. Otherwise, the external 
-service can directly POST the validation argument and validate the token 
-without any action from the user if he is already logged in. Do not delete it 
-in your own view.
+.. note::
+    This implementation set an ``oauth`` flag in session which certify that 
+    the validation had been done by the current user. Otherwise, the external 
+    service can directly POST the validation argument and validate the token 
+    without any action from the user if he is already logged in. Do not delete
+    it in your own view.
 
 There is another setting dedicated to OAuth ``OAUTH_REALM_KEY_NAME``, which
 allows you to specify a realm which will be used in headers::
@@ -94,9 +102,10 @@ With this setup, your OAuth URLs will be:
 
 That is the only thing you need to document for external developers.
 
-Note: You can customize the length of your key/secret attributes with 
-constants ``KEY_SIZE`` and ``SECRET_SIZE`` defined in consts.py. Default is
-set to 16 characters.
+.. note::
+    You can customize the length of your key/secret attributes with 
+    constants ``KEY_SIZE`` and ``SECRET_SIZE`` defined in consts.py. 
+    Default is set to 16 characters.
 
 A complete example is available in ``oauth_examples/provider/`` folder, you
 can run tests from this example with this command::

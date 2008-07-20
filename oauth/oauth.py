@@ -315,13 +315,14 @@ class OAuthServer(object):
         return new_token
 
     # verify an api call, checks all the parameters
-    def verify_request(self, oauth_request):
+    def verify_request(self, oauth_request, check_timestamp=True, check_nonce=True):
         # -> consumer and token
         version = self._get_version(oauth_request)
         consumer = self._get_consumer(oauth_request)
         # get the access token
         token = self._get_token(oauth_request, 'access')
-        self._check_signature(oauth_request, consumer, token)
+        self._check_signature(oauth_request, consumer, token, 
+                check_timestamp=check_timestamp, check_nonce=check_nonce)
         parameters = oauth_request.get_nonoauth_parameters()
         return consumer, token, parameters
 
@@ -379,10 +380,13 @@ class OAuthServer(object):
             raise OAuthError('Invalid %s token: %s' % (token_type, token_field))
         return token
 
-    def _check_signature(self, oauth_request, consumer, token):
+    def _check_signature(self, oauth_request, consumer, token, 
+                         check_timestamp=True, check_nonce=True):
         timestamp, nonce = oauth_request._get_timestamp_nonce()
-        self._check_timestamp(timestamp)
-        self._check_nonce(consumer, token, nonce)
+        if check_timestamp:
+            self._check_timestamp(timestamp)
+        if check_nonce:
+            self._check_nonce(consumer, token, nonce)
         signature_method = self._get_signature_method(oauth_request)
         try:
             signature = oauth_request.get_parameter('oauth_signature')

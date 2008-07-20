@@ -5,8 +5,7 @@ from models import Nonce, Token, Consumer, Resource
 
 class DataStore(oauth.OAuthDataStore):
     """Layer between Python OAuth and Django database."""
-    def __init__(self, oauth_request, check_nonce=True):
-        self.check_nonce = check_nonce
+    def __init__(self, oauth_request):
         self.signature = oauth_request.parameters.get('oauth_signature', None)
         self.timestamp = oauth_request.parameters.get('oauth_timestamp', None)
         self.scope = oauth_request.parameters.get('scope', 'all')
@@ -31,7 +30,7 @@ class DataStore(oauth.OAuthDataStore):
             return None
 
     def lookup_nonce(self, oauth_consumer, oauth_token, nonce):
-        if oauth_token is None or not self.check_nonce:
+        if oauth_token is None:
             return None
         nonce, created = Nonce.objects.get_or_create(consumer_key=oauth_consumer.key, 
                                                      token_key=oauth_token.key,

@@ -7,7 +7,7 @@ from stores import DataStore
 
 OAUTH_REALM_KEY_NAME = 'OAUTH_REALM_KEY_NAME'
 
-def initialize_server_request(request, check_nonce=True):
+def initialize_server_request(request):
     """Shortcut for initialization."""
     oauth_request = oauth.OAuthRequest.from_request(request.method, 
                                                     request.path, 
@@ -15,7 +15,7 @@ def initialize_server_request(request, check_nonce=True):
                                                     parameters=dict(request.REQUEST.items()),
                                                     query_string=request.environ.get('QUERY_STRING', ''))
     if oauth_request:
-        oauth_server = oauth.OAuthServer(DataStore(oauth_request, check_nonce))
+        oauth_server = oauth.OAuthServer(DataStore(oauth_request))
         oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
         oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
     else:
