@@ -24,9 +24,6 @@ class Resource(models.Model):
     is_readonly = models.BooleanField(default=True)
     
     objects = ResourceManager()
-    
-    class Admin:
-        pass
 
     def __unicode__(self):
         return u"Resource %s with url %s" % (self.name, self.url)
@@ -40,9 +37,6 @@ class Consumer(models.Model):
     user = models.ForeignKey(User, null=True, blank=True)
 
     objects = ConsumerManager()
-    
-    class Admin:
-        pass
         
     def __unicode__(self):
         return u"Consumer %s with key %s" % (self.name, self.key)
@@ -73,9 +67,6 @@ class Token(models.Model):
     resource = models.ForeignKey(Resource)
     
     objects = TokenManager()
-    
-    class Admin:
-        pass
     
     def __unicode__(self):
         return u"%s Token %s for %s" % (self.get_token_type_display(), self.key, self.consumer)
