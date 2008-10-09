@@ -25,7 +25,7 @@ def initialize_server_request(request):
 def send_oauth_error(err=None):
     """Shortcut for sending an error."""
     # send a 401 error
-    response = HttpResponse(err.message.encode('utf-8'))
+    response = HttpResponse(err.message.encode('utf-8'), mimetype="text/plain")
     response.status_code = 401
     # return the authenticate header
     realm = getattr(settings, OAUTH_REALM_KEY_NAME, '')
