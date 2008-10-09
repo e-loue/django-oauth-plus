@@ -10,6 +10,7 @@ from utils import initialize_server_request, send_oauth_error
 from decorators import oauth_required
 
 OAUTH_AUTHORIZE_VIEW = 'OAUTH_AUTHORIZE_VIEW'
+OAUTH_CALLBACK_VIEW = 'OAUTH_CALLBACK_VIEW'
 INVALID_PARAMS_RESPONSE = send_oauth_error(oauth.OAuthError(
                                             _('Invalid request parameters.')))
 
@@ -49,14 +50,14 @@ def user_authorization(request):
     try:
         # get the request callback, though there might not be one
         callback = oauth_server.get_callback(oauth_request)
-    except OAuthError:
+    except oauth.OAuthError:
         callback = None
 
     # entry point for the user
     if request.method == 'GET':
-        # try to get custom view
+        # try to get custom authorize view
         authorize_view_str = getattr(settings, OAUTH_AUTHORIZE_VIEW, 
-                                    'oauth_provider.views.fake_custom_view')
+                                    'oauth_provider.views.fake_authorize_view')
         try:
             authorize_view = get_callable(authorize_view_str)
         except AttributeError:
@@ -79,13 +80,19 @@ def user_authorization(request):
                     args = token.to_string(only_key=True)
                 else:
                     args = 'error=%s' % _('Access not granted by user.')
-                if callback:
-                    response = HttpResponseRedirect('%s?%s' % (callback, args))
-                else:
-                    # Not sure what to do here - i'll deal with it later
-                    response = HttpResponse("Authorized")
             except oauth.OAuthError, err:
                 response = send_oauth_error(err)
+            if callback:
+                response = HttpResponseRedirect('%s?%s' % (callback, args))
+            else:
+                # try to get custom callback view
+                callback_view_str = getattr(settings, OAUTH_CALLBACK_VIEW, 
+                                    'oauth_provider.views.fake_callback_view')
+                try:
+                    callback_view = get_callable(callback_view_str)
+                except AttributeError:
+                    raise Exception, "%s view doesn't exist." % callback_view_str
+                response = callback_view(request)
         else:
             response = send_oauth_error(oauth.OAuthError(_('Action not allowed.')))
         return response
@@ -115,10 +122,18 @@ def protected_resource_example(request):
     return HttpResponse('Protected Resource access!')
 
 @login_required
-def fake_custom_view(request, token, callback, params):
+def fake_authorize_view(request, token, callback, params):
     """
     Fake view for tests. It must return an ``HttpResponse``.
     
     You need to define your own in ``settings.OAUTH_AUTHORIZE_VIEW``.
     """
-    return HttpResponse('Fake custom view for %s.' % token.consumer.name)
+    return HttpResponse('Fake authorize view for %s.' % token.consumer.name)
+
+def fake_callback_view(request):
+    """
+    Fake view for tests. It must return an ``HttpResponse``.
+    
+    You can define your own in ``settings.OAUTH_CALLBACK_VIEW``.
+    """
+    return HttpResponse('Fake callback view.')
