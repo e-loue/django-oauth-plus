@@ -48,13 +48,30 @@ class CheckOAuth(object):
 
     @staticmethod
     def is_valid_request(request):
-        params = request.REQUEST
-        return 'oauth_consumer_key' in params \
-            and 'oauth_token' in params \
-            and 'oauth_signature_method' in params \
-            and 'oauth_signature' in params \
-            and 'oauth_timestamp' in params \
-            and 'oauth_nonce' in params
+        # first check the HTTP Authorization header
+        # - this is the preferred way to pass parameters, according to the oauth spec.
+        try:
+            auth_params = request.META["HTTP_AUTHORIZATION"]
+        except KeyError:
+            in_auth = False
+        else:
+            in_auth = 'oauth_consumer_key' in auth_params \
+                and 'oauth_token' in auth_params \
+                and 'oauth_signature_method' in auth_params \
+                and 'oauth_signature' in auth_params \
+                and 'oauth_timestamp' in auth_params \
+                and 'oauth_nonce' in auth_params
+          
+        # also try the request, which covers POST and GET
+        req_params = request.REQUEST
+        in_req = 'oauth_consumer_key' in req_params \
+            and 'oauth_token' in req_params \
+            and 'oauth_signature_method' in req_params \
+            and 'oauth_signature' in req_params \
+            and 'oauth_timestamp' in req_params \
+            and 'oauth_nonce' in req_params
+        
+        return in_auth or in_req
 
     @staticmethod
     def validate_token(request, check_timestamp=True, check_nonce=True):

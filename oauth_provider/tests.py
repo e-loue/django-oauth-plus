@@ -340,6 +340,10 @@ Service Provider to exchange it for an Access Token::
     ... }
     >>> response = c.get("/oauth/access_token/", parameters)
 
+.. note::
+    You can use HTTP Authorization header, if you provide both, header will be
+    checked before parameters. It depends on your needs.
+
 The Service Provider checks the signature and replies with an Access Token in 
 the body of the HTTP response::
 
