@@ -30,7 +30,7 @@ class CheckOAuth(object):
         
     def __get__(self, obj, cls=None):
         view_func = self.view_func.__get__(obj, cls)
-        return CheckOAuth(view_func)
+        return CheckOAuth(view_func, self.resource_name)
     
     def __call__(self, request, *args, **kwargs):
         if self.is_valid_request(request):
