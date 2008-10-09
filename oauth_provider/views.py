@@ -43,10 +43,14 @@ def user_authorization(request):
     try:
         # get the request token
         token = oauth_server.fetch_request_token(oauth_request)
-        # get the request callback
-        callback = oauth_server.get_callback(oauth_request)
     except oauth.OAuthError, err:
         return send_oauth_error(err)
+
+    try:
+        # get the request callback, though there might not be one
+        callback = oauth_server.get_callback(oauth_request)
+    except OAuthError:
+        callback = None
 
     # entry point for the user
     if request.method == 'GET':
@@ -75,7 +79,11 @@ def user_authorization(request):
                     args = token.to_string(only_key=True)
                 else:
                     args = 'error=%s' % _('Access not granted by user.')
-                response = HttpResponseRedirect('%s?%s' % (callback, args), mimetype="text/plain")
+                if callback:
+                    response = HttpResponseRedirect('%s?%s' % (callback, args))
+                else:
+                    # Not sure what to do here - i'll deal with it later
+                    response = HttpResponse("Authorized")
             except oauth.OAuthError, err:
                 response = send_oauth_error(err)
         else:
