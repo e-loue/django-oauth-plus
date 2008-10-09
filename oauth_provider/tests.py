@@ -104,8 +104,9 @@ That is the only thing you need to document for external developers.
 
 .. note::
     You can customize the length of your key/secret attributes with 
-    constants ``KEY_SIZE`` and ``SECRET_SIZE`` defined in consts.py. 
-    Default is set to 16 characters.
+    constants ``KEY_SIZE``, ``SECRET_SIZE`` and ``CONSUMER_KEY_SIZE`` defined 
+    in consts.py. Default is set to 16 characters for ``KEY_SIZE`` and 
+    ``SECRET_SIZE`` and 256 characters for ``CONSUMER_KEY_SIZE``.
 
 A complete example is available in ``oauth_examples/provider/`` folder, you
 can run tests from this example with this command::

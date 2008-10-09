@@ -6,12 +6,12 @@ from django.contrib.auth.models import User
 import oauth.oauth as oauth
 
 from managers import TokenManager, ConsumerManager, ResourceManager
-from consts import KEY_SIZE, SECRET_SIZE
+from consts import KEY_SIZE, SECRET_SIZE, CONSUMER_KEY_SIZE
 
 
 class Nonce(models.Model):
     token_key = models.CharField(max_length=KEY_SIZE)
-    consumer_key = models.CharField(max_length=KEY_SIZE)
+    consumer_key = models.CharField(max_length=CONSUMER_KEY_SIZE)
     key = models.CharField(max_length=255)
     
     def __unicode__(self):
@@ -31,7 +31,7 @@ class Resource(models.Model):
 
 class Consumer(models.Model):
     name = models.CharField(max_length=255)
-    key = models.CharField(max_length=KEY_SIZE)
+    key = models.CharField(max_length=CONSUMER_KEY_SIZE)
     secret = models.CharField(max_length=SECRET_SIZE)
     
     user = models.ForeignKey(User, null=True, blank=True)
