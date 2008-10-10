@@ -83,7 +83,11 @@ def user_authorization(request):
             except oauth.OAuthError, err:
                 response = send_oauth_error(err)
             if callback:
-                response = HttpResponseRedirect('%s?%s' % (callback, args))
+                if "?" in callback:
+                    url_delimiter = "&"
+                else:
+                    url_delimiter = "?"
+                response = HttpResponseRedirect('%s%s%s' % (callback, url_delimiter, args))
             else:
                 # try to get custom callback view
                 callback_view_str = getattr(settings, OAUTH_CALLBACK_VIEW, 
