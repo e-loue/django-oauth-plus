@@ -63,8 +63,7 @@ class DataStore(oauth.OAuthDataStore):
                                                            user=self.request_token.user,
                                                            resource=self.request_token.resource)
             return self.access_token
-        raise oauth.OAuthError('Consumer key or token key does not match.',
-                               'Make sure your request token is approved too.')
+        raise oauth.OAuthError('Consumer key or token key does not match. Make sure your request token is approved too.')
 
     def authorize_request_token(self, oauth_token, user):
         if oauth_token.key == self.request_token.key:
