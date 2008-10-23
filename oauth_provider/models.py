@@ -32,7 +32,7 @@ class Resource(models.Model):
 class Consumer(models.Model):
     name = models.CharField(max_length=255)
     key = models.CharField(max_length=CONSUMER_KEY_SIZE)
-    secret = models.CharField(max_length=SECRET_SIZE)
+    secret = models.CharField(max_length=SECRET_SIZE, blank=True)
     
     user = models.ForeignKey(User, null=True, blank=True)
 
