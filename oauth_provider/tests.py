@@ -371,6 +371,18 @@ Nonce::
     >>> response.content
     'Nonce already used: accessnonce'
 
+The Consumer will not be able to request an Access Token if the token is not
+approved::
+
+    >>> parameters['oauth_nonce'] = 'anotheraccessnonce'
+    >>> token.is_approved = False
+    >>> token.save()
+    >>> response = c.get("/oauth/access_token/", parameters)
+    >>> response.status_code
+    401
+    >>> response.content
+    'Consumer key or token key does not match. Make sure your request token is approved too.'
+
 
 Accessing Protected Resources
 -----------------------------
