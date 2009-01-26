@@ -9,9 +9,17 @@ OAUTH_REALM_KEY_NAME = 'OAUTH_REALM_KEY_NAME'
 
 def initialize_server_request(request):
     """Shortcut for initialization."""
+    # Django converts Authorization header in HTTP_AUTHORIZATION
+    # Warning: it doesn't happen in tests but it's useful, do not remove!
+    auth_header = {}
+    if 'Authorization' in request.META:
+        auth_header = {'Authorization': request.META['Authorization']}
+    elif 'HTTP_AUTHORIZATION' in request.META:
+        auth_header =  {'Authorization': request.META['HTTP_AUTHORIZATION']}
+    
     oauth_request = oauth.OAuthRequest.from_request(request.method, 
                                                     request.build_absolute_uri(), 
-                                                    headers=request.META,
+                                                    headers=auth_header,
                                                     parameters=dict(request.REQUEST.items()),
                                                     query_string=request.environ.get('QUERY_STRING', ''))
     if oauth_request:
