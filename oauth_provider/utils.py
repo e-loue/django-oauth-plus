@@ -1,4 +1,5 @@
-import oauth.oauth as oauth
+from oauth.oauth import OAuthRequest, OAuthServer, build_authenticate_header,\
+    OAuthSignatureMethod_PLAINTEXT, OAuthSignatureMethod_HMAC_SHA1
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -17,15 +18,15 @@ def initialize_server_request(request):
     elif 'HTTP_AUTHORIZATION' in request.META:
         auth_header =  {'Authorization': request.META['HTTP_AUTHORIZATION']}
     
-    oauth_request = oauth.OAuthRequest.from_request(request.method, 
-                                                    request.build_absolute_uri(), 
-                                                    headers=auth_header,
-                                                    parameters=dict(request.REQUEST.items()),
-                                                    query_string=request.environ.get('QUERY_STRING', ''))
+    oauth_request = OAuthRequest.from_request(request.method, 
+                                              request.build_absolute_uri(), 
+                                              headers=auth_header,
+                                              parameters=dict(request.REQUEST.items()),
+                                              query_string=request.environ.get('QUERY_STRING', ''))
     if oauth_request:
-        oauth_server = oauth.OAuthServer(DataStore(oauth_request))
-        oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
-        oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
+        oauth_server = OAuthServer(DataStore(oauth_request))
+        oauth_server.add_signature_method(OAuthSignatureMethod_PLAINTEXT())
+        oauth_server.add_signature_method(OAuthSignatureMethod_HMAC_SHA1())
     else:
         oauth_server = None
     return oauth_server, oauth_request
@@ -37,7 +38,7 @@ def send_oauth_error(err=None):
     response.status_code = 401
     # return the authenticate header
     realm = getattr(settings, OAUTH_REALM_KEY_NAME, '')
-    header = oauth.build_authenticate_header(realm=realm)
+    header = build_authenticate_header(realm=realm)
     for k, v in header.iteritems():
         response[k] = v
     return response

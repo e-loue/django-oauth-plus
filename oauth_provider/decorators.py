@@ -1,4 +1,4 @@
-import oauth.oauth as oauth
+from oauth.oauth import OAuthError
 
 try:
     from functools import wraps, update_wrapper
@@ -36,15 +36,15 @@ class CheckOAuth(object):
         if self.is_valid_request(request):
             try:
                 consumer, token, parameters = self.validate_token(request)
-            except oauth.OAuthError, e:
+            except OAuthError, e:
                 return send_oauth_error(e)
             
             if self.resource_name and token.resource.name != self.resource_name:
-                return send_oauth_error(oauth.OAuthError(_('You are not allowed to access this resource.')))
+                return send_oauth_error(OAuthError(_('You are not allowed to access this resource.')))
             elif consumer and token:
                 return self.view_func(request, *args, **kwargs)
         
-        return send_oauth_error(oauth.OAuthError(_('Invalid request parameters.')))
+        return send_oauth_error(OAuthError(_('Invalid request parameters.')))
 
     @staticmethod
     def is_valid_request(request):

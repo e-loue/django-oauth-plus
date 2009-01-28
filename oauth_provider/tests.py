@@ -414,10 +414,10 @@ HMAC-SHA1 produces the following digest value as a base64-encoded string
 (using the Signature Base String as text and kd94hf93k423kf44&pfkkdhi9sl3r4s00 
 as key)::
 
-    >>> import oauth.oauth as oauth
-    >>> oauth_request = oauth.OAuthRequest.from_token_and_callback(access_token,
+    >>> from oauth.oauth import OAuthRequest, OAuthSignatureMethod_HMAC_SHA1
+    >>> oauth_request = OAuthRequest.from_token_and_callback(access_token,
     ...     http_url='http://testserver/oauth/photo/', parameters=parameters)
-    >>> signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
+    >>> signature_method = OAuthSignatureMethod_HMAC_SHA1()
     >>> signature = signature_method.build_signature(oauth_request, consumer, 
     ...                                                 access_token)
 

@@ -1,9 +1,9 @@
-import oauth.oauth as oauth
+from oauth.oauth import OAuthDataStore, OAuthError, escape
 
 from models import Nonce, Token, Consumer, Resource
 
 
-class DataStore(oauth.OAuthDataStore):
+class DataStore(OAuthDataStore):
     """Layer between Python OAuth and Django database."""
     def __init__(self, oauth_request):
         self.signature = oauth_request.parameters.get('oauth_signature', None)
@@ -45,13 +45,13 @@ class DataStore(oauth.OAuthDataStore):
             try:
                 resource = Resource.objects.get(name=self.scope)
             except:
-                raise oauth.OAuthError('Resource %s does not exist.' % oauth.escape(self.scope))
+                raise OAuthError('Resource %s does not exist.' % escape(self.scope))
             self.request_token = Token.objects.create_token(consumer=self.consumer,
                                                             token_type=Token.REQUEST,
                                                             timestamp=self.timestamp,
                                                             resource=resource)
             return self.request_token
-        raise oauth.OAuthError('Consumer key does not match.')
+        raise OAuthError('Consumer key does not match.')
 
     def fetch_access_token(self, oauth_consumer, oauth_token):
         if oauth_consumer.key == self.consumer.key \
@@ -63,7 +63,7 @@ class DataStore(oauth.OAuthDataStore):
                                                            user=self.request_token.user,
                                                            resource=self.request_token.resource)
             return self.access_token
-        raise oauth.OAuthError('Consumer key or token key does not match. Make sure your request token is approved too.')
+        raise OAuthError('Consumer key or token key does not match. Make sure your request token is approved too.')
 
     def authorize_request_token(self, oauth_token, user):
         if oauth_token.key == self.request_token.key:
@@ -72,4 +72,4 @@ class DataStore(oauth.OAuthDataStore):
             self.request_token.user = user
             self.request_token.save()
             return self.request_token
-        raise oauth.OAuthError('Token key does not match.')
+        raise OAuthError('Token key does not match.')
