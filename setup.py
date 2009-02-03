@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
  
 setup(
     name='django-oauth',
-    version='0.1',
+    version='1.0',
     description='Support of OAuth in Django.',
     author='David Larlet',
     author_email='david@larlet.fr',
     url='http://code.welldev.org/django-oauth/',
     packages=find_packages(),
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
