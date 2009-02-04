@@ -23,5 +23,5 @@ setup(
     zip_safe=False,
     # Tells setuptools to download setuptools_git before running setup.py so
     # it can find the data files under Hg version control.
-    setup_requires=['hg.setuptools'],
+    setup_requires=['setuptools_hg'],
 )
