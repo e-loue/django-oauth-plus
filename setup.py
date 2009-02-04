@@ -9,7 +9,7 @@ setup(
     url='http://code.welldev.org/django-oauth/',
     packages=find_packages(),
     classifiers=[
-        'Development Status :: 5 - Stable',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
