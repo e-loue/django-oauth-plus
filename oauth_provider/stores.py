@@ -40,7 +40,7 @@ class DataStore(OAuthDataStore):
         else:
             return nonce.key
 
-    def fetch_request_token(self, oauth_consumer):
+    def fetch_request_token(self, oauth_consumer, oauth_callback):
         if oauth_consumer.key == self.consumer.key:
             try:
                 resource = Resource.objects.get(name=self.scope)
@@ -53,7 +53,7 @@ class DataStore(OAuthDataStore):
             return self.request_token
         raise OAuthError('Consumer key does not match.')
 
-    def fetch_access_token(self, oauth_consumer, oauth_token):
+    def fetch_access_token(self, oauth_consumer, oauth_token, oauth_verifier):
         if oauth_consumer.key == self.consumer.key \
         and oauth_token.key == self.request_token.key \
         and self.request_token.is_approved:
