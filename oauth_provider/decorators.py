@@ -9,6 +9,7 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.translation import ugettext as _
 
 from utils import initialize_server_request, send_oauth_error
+from consts import OAUTH_PARAMETERS_NAMES
 
 def oauth_required(view_func=None, resource_name=None):
     return CheckOAuth(view_func, resource_name)
@@ -48,33 +49,17 @@ class CheckOAuth(object):
 
     @staticmethod
     def is_valid_request(request):
-        # first check the HTTP Authorization header
-        # - this is the preferred way to pass parameters, according to the oauth spec.
-        try:
-            auth_params = request.META["HTTP_AUTHORIZATION"]
-        except KeyError:
-            in_auth = False
-        else:
-            in_auth = 'oauth_consumer_key' in auth_params \
-                and 'oauth_token' in auth_params \
-                and 'oauth_signature_method' in auth_params \
-                and 'oauth_signature' in auth_params \
-                and 'oauth_timestamp' in auth_params \
-                and 'oauth_nonce' in auth_params
-          
-        # also try the request, which covers POST and GET
-        req_params = request.REQUEST
-        in_req = 'oauth_consumer_key' in req_params \
-            and 'oauth_token' in req_params \
-            and 'oauth_signature_method' in req_params \
-            and 'oauth_signature' in req_params \
-            and 'oauth_timestamp' in req_params \
-            and 'oauth_nonce' in req_params
-        
-        return in_auth or in_req
+        """
+        Checks whether the required parameters are either in
+        the http-authorization header sent by some clients,
+        which is by the way the preferred method according to
+        OAuth spec, but otherwise fall back to `GET` and `POST`.
+        """
+        is_in = lambda l: all((p in l) for p in OAUTH_PARAMETERS_NAMES)
+        auth_params = request.META.get("HTTP_AUTHORIZATION", [])
+        return is_in(auth_params) or is_in(request.REQUEST)
 
     @staticmethod
     def validate_token(request):
         oauth_server, oauth_request = initialize_server_request(request)
         return oauth_server.verify_request(oauth_request)
-        

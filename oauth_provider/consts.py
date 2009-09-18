@@ -16,3 +16,7 @@ CONSUMER_STATES = (
     (CANCELED, _('Canceled')),
     (REJECTED, _('Rejected')),
 )
+
+PARAMETERS_NAMES = ('consumer_key', 'token', 'signature',
+                    'signature_method', 'timestamp', 'nonce')
+OAUTH_PARAMETERS_NAMES = ['oauth_'+s for s in PARAMETERS_NAMES]
