@@ -1,11 +1,15 @@
 import urllib
+import urlparse
+from time import time
 
 from django.db import models
 from django.contrib.auth.models import User
 
 from managers import TokenManager, ConsumerManager, ResourceManager
-from consts import KEY_SIZE, SECRET_SIZE, CONSUMER_KEY_SIZE
+from consts import KEY_SIZE, SECRET_SIZE, CONSUMER_KEY_SIZE, CONSUMER_STATES,\
+                   PENDING, VERIFIER_SIZE
 
+generate_random = User.objects.make_random_password
 
 class Nonce(models.Model):
     token_key = models.CharField(max_length=KEY_SIZE)
@@ -29,9 +33,12 @@ class Resource(models.Model):
 
 class Consumer(models.Model):
     name = models.CharField(max_length=255)
+    description = models.TextField()
+    
     key = models.CharField(max_length=CONSUMER_KEY_SIZE)
     secret = models.CharField(max_length=SECRET_SIZE, blank=True)
-    
+
+    status = models.SmallIntegerField(choices=CONSUMER_STATES, default=PENDING)
     user = models.ForeignKey(User, null=True, blank=True)
 
     objects = ConsumerManager()
@@ -40,10 +47,14 @@ class Consumer(models.Model):
         return u"Consumer %s with key %s" % (self.name, self.key)
 
     def generate_random_codes(self):
-        key = User.objects.make_random_password(length=KEY_SIZE)
-        secret = User.objects.make_random_password(length=SECRET_SIZE)
+        """
+        Used to generate random key/secret pairings.
+        Use this after you've added the other data in place of save().
+        """
+        key = generate_random(length=KEY_SIZE)
+        secret = generate_random(length=SECRET_SIZE)
         while Consumer.objects.filter(key__exact=key, secret__exact=secret).count():
-            secret = User.objects.make_random_password(length=SECRET_SIZE)
+            secret = generate_random(length=SECRET_SIZE)
         self.key = key
         self.secret = secret
         self.save()
@@ -56,13 +67,18 @@ class Token(models.Model):
     
     key = models.CharField(max_length=KEY_SIZE)
     secret = models.CharField(max_length=SECRET_SIZE)
-    token_type = models.IntegerField(choices=TOKEN_TYPES)
-    timestamp = models.IntegerField()
+    token_type = models.SmallIntegerField(choices=TOKEN_TYPES)
+    timestamp = models.IntegerField(default=long(time()))
     is_approved = models.BooleanField(default=False)
     
-    user = models.ForeignKey(User, null=True, blank=True)
+    user = models.ForeignKey(User, null=True, blank=True, related_name='tokens')
     consumer = models.ForeignKey(Consumer)
     resource = models.ForeignKey(Resource)
+    
+    ## OAuth 1.0a stuff
+    verifier = models.CharField(max_length=VERIFIER_SIZE)
+    callback = models.CharField(max_length=255, null=True, blank=True)
+    callback_confirmed = models.BooleanField(default=False)
     
     objects = TokenManager()
     
@@ -72,17 +88,47 @@ class Token(models.Model):
     def to_string(self, only_key=False):
         token_dict = {
             'oauth_token': self.key, 
-            'oauth_token_secret': self.secret
+            'oauth_token_secret': self.secret,
+            'oauth_callback_confirmed': 'true',
         }
+        if self.verifier:
+            token_dict.update({ 'oauth_verifier': self.verifier })
+
         if only_key:
             del token_dict['oauth_token_secret']
+
         return urllib.urlencode(token_dict)
 
     def generate_random_codes(self):
-        key = User.objects.make_random_password(length=KEY_SIZE)
-        secret = User.objects.make_random_password(length=SECRET_SIZE)
+        """
+        Used to generate random key/secret pairings. 
+        Use this after you've added the other data in place of save(). 
+        """
+        key = generate_random(length=KEY_SIZE)
+        secret = generate_random(length=SECRET_SIZE)
         while Token.objects.filter(key__exact=key, secret__exact=secret).count():
-            secret = User.objects.make_random_password(length=SECRET_SIZE)
+            secret = generate_random(length=SECRET_SIZE)
         self.key = key
         self.secret = secret
         self.save()
+
+    ## OAuth 1.0a stuff
+
+    def get_callback_url(self):
+        if self.callback and self.verifier:
+            # Append the oauth_verifier.
+            parts = urlparse.urlparse(self.callback)
+            scheme, netloc, path, params, query, fragment = parts[:6]
+            if query:
+                query = '%s&oauth_verifier=%s' % (query, self.verifier)
+            else:
+                query = 'oauth_verifier=%s' % self.verifier
+            return urlparse.urlunparse((scheme, netloc, path, params,
+                query, fragment))
+        return self.callback
+    
+    def set_callback(self, callback):
+        if callback != "oob": # out of band, says "we can't do this!"
+            self.callback = callback
+            self.callback_confirmed = True
+            self.save()
