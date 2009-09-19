@@ -3,7 +3,7 @@ from urlparse import urlparse
 from oauth.oauth import OAuthDataStore, OAuthError, escape
 
 from models import Nonce, Token, Consumer, Resource, generate_random
-from consts import VERIFIER_SIZE, MAX_URL_LENGTH
+from consts import VERIFIER_SIZE, MAX_URL_LENGTH, OUT_OF_BAND
 
 
 class DataStore(OAuthDataStore):
@@ -51,7 +51,7 @@ class DataStore(OAuthDataStore):
         callback = None
         callback_confirmed = False
         if oauth_callback:
-            if oauth_callback != "oob":
+            if oauth_callback != OUT_OF_BAND:
                 if check_valid_callback(oauth_callback):
                     callback = oauth_callback
                     callback_confirmed = True

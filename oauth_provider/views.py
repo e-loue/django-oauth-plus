@@ -8,6 +8,8 @@ from django.core.urlresolvers import get_callable
 
 from utils import initialize_server_request, send_oauth_error
 from decorators import oauth_required
+from stores import check_valid_callback
+from consts import OUT_OF_BAND
 
 OAUTH_AUTHORIZE_VIEW = 'OAUTH_AUTHORIZE_VIEW'
 OAUTH_CALLBACK_VIEW = 'OAUTH_CALLBACK_VIEW'
@@ -50,8 +52,20 @@ def user_authorization(request):
     try:
         # get the request callback, though there might not be one
         callback = oauth_server.get_callback(oauth_request)
+        
+        # OAuth 1.0a: this parameter should not be present on this version
+        if token.callback_confirmed:
+            return HttpResponseBadRequest("Cannot specify oauth_callback at authorization step for 1.0a protocol")
+        if not check_valid_callback(callback):
+            return HttpResponseBadRequest("Invalid callback URL")
     except OAuthError:
         callback = None
+
+    # OAuth 1.0a: use the token's callback if confirmed
+    if token.callback_confirmed:
+        callback = token.callback
+        if callback == OUT_OF_BAND:
+            callback = None
 
     # entry point for the user
     if request.method == 'GET':
@@ -82,10 +96,6 @@ def user_authorization(request):
                     args = 'error=%s' % _('Access not granted by user.')
             except OAuthError, err:
                 response = send_oauth_error(err)
-                
-            # OAuth 1.0a: use the token's callback if confirmed
-            if token.callback_confirmed:
-                callback = token.callback
             
             if callback:
                 if "?" in callback:

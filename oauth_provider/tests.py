@@ -670,8 +670,26 @@ redirects her back to the Consumer's callback URL::
     'http://printer.example.com/request_token_ready?error=Access%20not%20granted%20by%20user.'
     >>> c.logout()
 
-With OAuth 1.0a, the callback is required, hence the ``OAUTH_CALLBACK_VIEW`` 
-setting is useless.
+With OAuth 1.0a, the callback argument can be set to "oob" (out-of-band), 
+you can specify your own default callback view with the
+``OAUTH_CALLBACK_VIEW`` setting::
+
+    >>> from oauth_provider.consts import OUT_OF_BAND
+    >>> token.callback = OUT_OF_BAND
+    >>> token.save()
+    >>> parameters = {
+    ...     'oauth_token': token.key,
+    ... }
+    >>> c.login(username='jane', password='toto')
+    True
+    >>> response = c.get("/oauth/authorize/", parameters)
+    >>> parameters['authorize_access'] = 0
+    >>> response = c.post("/oauth/authorize/", parameters)
+    >>> response.status_code
+    200
+    >>> response.content
+    'Fake callback view.'
+    >>> c.logout()
 
 
 Obtaining an Access Token
