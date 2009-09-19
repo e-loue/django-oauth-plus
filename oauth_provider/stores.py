@@ -48,9 +48,15 @@ class DataStore(OAuthDataStore):
             raise OAuthError('Consumer key does not match.')
         
         # OAuth 1.0a: if there is a callback, check its validity
-        if oauth_callback and \
-            not (oauth_callback == "oob" or check_valid_callback(oauth_callback)):
-            raise OAuthError('Invalid callback URL.')
+        callback = None
+        callback_confirmed = False
+        if oauth_callback:
+            if oauth_callback != "oob":
+                if check_valid_callback(oauth_callback):
+                    callback = oauth_callback
+                    callback_confirmed = True
+                else:
+                    raise OAuthError('Invalid callback URL.')
 
         try:
             resource = Resource.objects.get(name=self.scope)
@@ -59,10 +65,9 @@ class DataStore(OAuthDataStore):
         self.request_token = Token.objects.create_token(consumer=self.consumer,
                                                         token_type=Token.REQUEST,
                                                         timestamp=self.timestamp,
-                                                        resource=resource)
-        # OAuth 1.0a: if there is a callback, set it
-        if oauth_callback:
-            self.request_token.set_callback(oauth_callback)
+                                                        resource=resource,
+                                                        callback=callback,
+                                                        callback_confirmed=callback_confirmed)
         
         return self.request_token
         

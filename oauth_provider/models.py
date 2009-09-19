@@ -113,11 +113,11 @@ class Token(models.Model):
         self.secret = secret
         self.save()
 
-    ## OAuth 1.0a stuff
-
     def get_callback_url(self):
+        """
+        OAuth 1.0a, append the oauth_verifier.
+        """
         if self.callback and self.verifier:
-            # Append the oauth_verifier.
             parts = urlparse.urlparse(self.callback)
             scheme, netloc, path, params, query, fragment = parts[:6]
             if query:
@@ -127,9 +127,3 @@ class Token(models.Model):
             return urlparse.urlunparse((scheme, netloc, path, params,
                 query, fragment))
         return self.callback
-    
-    def set_callback(self, callback):
-        if callback != "oob": # out of band, says "we can't do this!"
-            self.callback = callback
-            self.callback_confirmed = True
-            self.save()
