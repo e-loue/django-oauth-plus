@@ -96,6 +96,7 @@ class Token(models.Model):
 
         if only_key:
             del token_dict['oauth_token_secret']
+            del token_dict['oauth_callback_confirmed']
 
         return urllib.urlencode(token_dict)
 

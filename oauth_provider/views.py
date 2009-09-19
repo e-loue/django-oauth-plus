@@ -82,6 +82,11 @@ def user_authorization(request):
                     args = 'error=%s' % _('Access not granted by user.')
             except OAuthError, err:
                 response = send_oauth_error(err)
+                
+            # OAuth 1.0a: use the token's callback if confirmed
+            if token.callback_confirmed:
+                callback = token.callback
+            
             if callback:
                 if "?" in callback:
                     url_delimiter = "&"
