@@ -595,6 +595,16 @@ If you try to access a resource with a wrong scope, it will return an error::
     401
     >>> response.content
     'Resource videos does not exist.'
+    >>> parameters['scope'] = 'photos' # restore
+
+If you try to put a wrong callback, it will return an error::
+
+    >>> parameters['oauth_callback'] = 'wrongcallback'
+    >>> response = c.get("/oauth/request_token/", parameters)
+    >>> response.status_code
+    401
+    >>> response.content
+    'Invalid callback URL.'
 
 
 Requesting User Authorization

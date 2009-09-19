@@ -1,7 +1,9 @@
+from urlparse import urlparse
+
 from oauth.oauth import OAuthDataStore, OAuthError, escape
 
 from models import Nonce, Token, Consumer, Resource, generate_random
-from consts import VERIFIER_SIZE
+from consts import VERIFIER_SIZE, MAX_URL_LENGTH
 
 
 class DataStore(OAuthDataStore):
@@ -42,21 +44,28 @@ class DataStore(OAuthDataStore):
             return nonce.key
 
     def fetch_request_token(self, oauth_consumer, oauth_callback):
-        if oauth_consumer.key == self.consumer.key:
-            try:
-                resource = Resource.objects.get(name=self.scope)
-            except:
-                raise OAuthError('Resource %s does not exist.' % escape(self.scope))
-            self.request_token = Token.objects.create_token(consumer=self.consumer,
-                                                            token_type=Token.REQUEST,
-                                                            timestamp=self.timestamp,
-                                                            resource=resource)
-            # OAuth 1.0a: if there is a callback, set it
-            if oauth_callback:
-                self.request_token.set_callback(oauth_callback)
-            
-            return self.request_token
-        raise OAuthError('Consumer key does not match.')
+        if oauth_consumer.key != self.consumer.key:
+            raise OAuthError('Consumer key does not match.')
+        
+        # OAuth 1.0a: if there is a callback, check its validity
+        if oauth_callback and \
+            not (oauth_callback == "oob" or check_valid_callback(oauth_callback)):
+            raise OAuthError('Invalid callback URL.')
+
+        try:
+            resource = Resource.objects.get(name=self.scope)
+        except:
+            raise OAuthError('Resource %s does not exist.' % escape(self.scope))
+        self.request_token = Token.objects.create_token(consumer=self.consumer,
+                                                        token_type=Token.REQUEST,
+                                                        timestamp=self.timestamp,
+                                                        resource=resource)
+        # OAuth 1.0a: if there is a callback, set it
+        if oauth_callback:
+            self.request_token.set_callback(oauth_callback)
+        
+        return self.request_token
+        
 
     def fetch_access_token(self, oauth_consumer, oauth_token, oauth_verifier):
         if oauth_consumer.key == self.consumer.key \
@@ -89,3 +98,13 @@ class DataStore(OAuthDataStore):
             self.request_token.save()
             return self.request_token
         raise OAuthError('Token key does not match.')
+
+
+def check_valid_callback(callback):
+    """
+    Checks the size and nature of the callback.
+    """
+    callback_url = urlparse(callback)
+    return (callback_url.scheme in ['http', 'https'] 
+            and callback_url.hostname
+            and len(callback) < MAX_URL_LENGTH)
