@@ -11,11 +11,6 @@ methodology for API authentication.
 
 .. _`OAuth protocol`: http://oauth.net/core/1.0a
 
-.. warning::
-    At this early stage of the development, feedback is really appreciated.
-    Do not hesitate to send an email or a patch if you've got any issue with 
-    the current implementation.
-
 
 Authenticating with OAuth
 =========================
@@ -126,8 +121,9 @@ can run tests from this example with this command::
 Protocol Example 1.0
 ====================
 
-DUE TO THE SECURITY ISSUE, THIS EXAMPLE IS NOT THE RECOMMENDED WAY ANYMORE.
-SEE BELOW FOR A MORE ROBUST EXAMPLE WHICH IS 1.0a COMPLIANT.
+.. warning::
+    DUE TO THE SECURITY ISSUE, THIS EXAMPLE IS NOT THE RECOMMENDED WAY ANYMORE.
+    SEE BELOW FOR A MORE ROBUST EXAMPLE WHICH IS 1.0a COMPLIANT.
 
 In this example, the Service Provider photos.example.net is a photo sharing 
 website, and the Consumer printer.example.com is a photo printing website. 
@@ -490,7 +486,8 @@ Remove created models' instances to be able to launch 1.0a tests just below::
 Protocol Example 1.0a
 =====================
 
-THIS IS THE RECOMMENDED WAY TO USE THIS APPLICATION.
+.. warning::
+    THIS IS THE RECOMMENDED WAY TO USE THIS APPLICATION.
 
 This example is exactly the same as 1.0 except it uses newly introduced
 arguments to be 1.0a compatible and fix the security issue.
