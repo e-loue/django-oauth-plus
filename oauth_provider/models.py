@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 
 from managers import TokenManager, ConsumerManager, ResourceManager
 from consts import KEY_SIZE, SECRET_SIZE, CONSUMER_KEY_SIZE, CONSUMER_STATES,\
-                   PENDING, VERIFIER_SIZE
+                   PENDING, VERIFIER_SIZE, MAX_URL_LENGTH
 
 generate_random = User.objects.make_random_password
 
@@ -22,7 +22,7 @@ class Nonce(models.Model):
 
 class Resource(models.Model):
     name = models.CharField(max_length=255)
-    url = models.TextField(max_length=2047)
+    url = models.TextField(max_length=MAX_URL_LENGTH)
     is_readonly = models.BooleanField(default=True)
     
     objects = ResourceManager()
@@ -77,7 +77,7 @@ class Token(models.Model):
     
     ## OAuth 1.0a stuff
     verifier = models.CharField(max_length=VERIFIER_SIZE)
-    callback = models.CharField(max_length=255, null=True, blank=True)
+    callback = models.CharField(max_length=MAX_URL_LENGTH, null=True, blank=True)
     callback_confirmed = models.BooleanField(default=False)
     
     objects = TokenManager()
