@@ -87,7 +87,7 @@ def user_authorization(request):
         if request.session.get('oauth', '') == token.key:
             request.session['oauth'] = ''
             try:
-                if bool(request.POST.get('authorize_access', False)):
+                if int(request.POST.get('authorize_access', 0)):
                     # authorize the token
                     token = oauth_server.authorize_token(token, request.user)
                     # return the token key
