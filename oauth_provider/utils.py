@@ -6,7 +6,8 @@ from django.http import HttpResponse
 
 from stores import DataStore
 
-OAUTH_REALM_KEY_NAME = 'OAUTH_REALM_KEY_NAME'
+OAUTH_REALM_KEY_NAME = getattr(settings, 'OAUTH_REALM_KEY_NAME', '')
+OAUTH_SIGNATURE_METHODS = getattr(settings, 'OAUTH_SIGNATURE_METHODS', ['plaintext', 'hmac-sha1'])
 
 def initialize_server_request(request):
     """Shortcut for initialization."""
@@ -25,8 +26,10 @@ def initialize_server_request(request):
                                               query_string=request.environ.get('QUERY_STRING', ''))
     if oauth_request:
         oauth_server = OAuthServer(DataStore(oauth_request))
-        oauth_server.add_signature_method(OAuthSignatureMethod_PLAINTEXT())
-        oauth_server.add_signature_method(OAuthSignatureMethod_HMAC_SHA1())
+        if 'plaintext' in OAUTH_SIGNATURE_METHODS:
+            oauth_server.add_signature_method(OAuthSignatureMethod_PLAINTEXT())
+        if 'hmac-sha1' in OAUTH_SIGNATURE_METHODS:
+            oauth_server.add_signature_method(OAuthSignatureMethod_HMAC_SHA1())
     else:
         oauth_server = None
     return oauth_server, oauth_request
@@ -37,8 +40,7 @@ def send_oauth_error(err=None):
     response = HttpResponse(err.message.encode('utf-8'), mimetype="text/plain")
     response.status_code = 401
     # return the authenticate header
-    realm = getattr(settings, OAUTH_REALM_KEY_NAME, '')
-    header = build_authenticate_header(realm=realm)
+    header = build_authenticate_header(realm=OAUTH_REALM_KEY_NAME)
     for k, v in header.iteritems():
         response[k] = v
     return response

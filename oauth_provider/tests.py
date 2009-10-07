@@ -112,6 +112,15 @@ URL hostnames, it must be a list of blacklisted ones. For example::
 
     OAUTH_BLACKLISTED_HOSTNAMES = ['localhost', '127.0.0.1']
 
+Default is an empty list.
+
+The ``OAUTH_SIGNATURE_METHODS`` setting allows you to restrict signatures'
+methods you'd like to use. For example if you don't want plaintext signature::
+
+    OAUTH_SIGNATURE_METHODS = ['hmac-sha1',]
+
+Default is ``['plaintext', 'hmac-sha1']``.
+
 A complete example is available in ``oauth_examples/provider/`` folder, you
 can run tests from this example with this command::
 
