@@ -19,11 +19,12 @@ def initialize_server_request(request):
     elif 'HTTP_AUTHORIZATION' in request.META:
         auth_header =  {'Authorization': request.META['HTTP_AUTHORIZATION']}
     
+    parameters = dict(request.REQUEST.items())
     oauth_request = OAuthRequest.from_request(request.method, 
                                               request.build_absolute_uri(), 
                                               headers=auth_header,
-                                              parameters=dict(request.REQUEST.items()),
-                                              query_string=request.environ.get('QUERY_STRING', ''))
+                                              parameters=parameters,
+                                              query_string=request.META.get('QUERY_STRING', ''))
     if oauth_request:
         oauth_server = OAuthServer(DataStore(oauth_request))
         if 'plaintext' in OAUTH_SIGNATURE_METHODS:
