@@ -91,9 +91,9 @@ def user_authorization(request):
                     # authorize the token
                     token = oauth_server.authorize_token(token, request.user)
                     # return the token key
-                    args = token.to_string(only_key=True)
+                    args = { 'token': token }
                 else:
-                    args = 'error=%s' % _('Access not granted by user.')
+                    args = { 'error': _('Access not granted by user.') }
             except OAuthError, err:
                 response = send_oauth_error(err)
             
@@ -102,7 +102,11 @@ def user_authorization(request):
                     url_delimiter = "&"
                 else:
                     url_delimiter = "?"
-                response = HttpResponseRedirect('%s%s%s' % (callback, url_delimiter, args))
+                if 'token' in args:
+                    query_args = args['token'].to_string(only_key=True)
+                else: # access is not authorized i.e. error
+                    query_args = 'error=%s' % args['error']
+                response = HttpResponseRedirect('%s%s%s' % (callback, url_delimiter, query_args))
             else:
                 # try to get custom callback view
                 callback_view_str = getattr(settings, OAUTH_CALLBACK_VIEW, 
@@ -111,7 +115,7 @@ def user_authorization(request):
                     callback_view = get_callable(callback_view_str)
                 except AttributeError:
                     raise Exception, "%s view doesn't exist." % callback_view_str
-                response = callback_view(request)
+                response = callback_view(request, **args)
         else:
             response = send_oauth_error(OAuthError(_('Action not allowed.')))
         return response
@@ -149,7 +153,7 @@ def fake_authorize_view(request, token, callback, params):
     """
     return HttpResponse('Fake authorize view for %s.' % token.consumer.name)
 
-def fake_callback_view(request):
+def fake_callback_view(request, **args):
     """
     Fake view for tests. It must return an ``HttpResponse``.
     
