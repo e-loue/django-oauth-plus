@@ -107,12 +107,17 @@ That is the only thing you need to document for external developers.
     in consts.py. Default is set to 16 characters for ``KEY_SIZE`` and 
     ``SECRET_SIZE`` and 256 characters for ``CONSUMER_KEY_SIZE``.
 
+The ``OAUTH_BLACKLISTED_HOSTNAMES`` setting allows you to restrict callback
+URL hostnames, it must be a list of blacklisted ones. For example::
+
+    OAUTH_BLACKLISTED_HOSTNAMES = ['localhost', '127.0.0.1']
+
 A complete example is available in ``oauth_examples/provider/`` folder, you
 can run tests from this example with this command::
 
     $ python manage.py test oauth_provider
     ...
-    Ran 4 tests in 0.101s
+    Ran 1 test in 0.264s
     
     OK
     ...

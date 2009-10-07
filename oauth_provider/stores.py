@@ -2,9 +2,12 @@ from urlparse import urlparse
 
 from oauth.oauth import OAuthDataStore, OAuthError, escape
 
+from django.conf import settings
+
 from models import Nonce, Token, Consumer, Resource, generate_random
 from consts import VERIFIER_SIZE, MAX_URL_LENGTH, OUT_OF_BAND
 
+OAUTH_BLACKLISTED_HOSTNAMES = getattr(settings, 'OAUTH_BLACKLISTED_HOSTNAMES', [])
 
 class DataStore(OAuthDataStore):
     """Layer between Python OAuth and Django database."""
@@ -110,6 +113,6 @@ def check_valid_callback(callback):
     Checks the size and nature of the callback.
     """
     callback_url = urlparse(callback)
-    return (callback_url.scheme in ['http', 'https'] 
-            and callback_url.hostname
+    return (callback_url.scheme
+            and callback_url.hostname not in OAUTH_BLACKLISTED_HOSTNAMES
             and len(callback) < MAX_URL_LENGTH)
