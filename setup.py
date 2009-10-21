@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
  
 setup(
     name='django-oauth',
-    version='1.0',
+    version='1.1',
     description='Support of OAuth in Django.',
     author='David Larlet',
     author_email='david@larlet.fr',
