@@ -194,7 +194,7 @@ We need to create the Protected Resource and the Consumer first::
     >>> CONSUMER_KEY = 'dpf43f3p2l4k3l03'
     >>> CONSUMER_SECRET = 'kd94hf93k423kf44'
     >>> consumer = Consumer(key=CONSUMER_KEY, secret=CONSUMER_SECRET, 
-    ...                     name='printer.example.com')
+    ...                     name='printer.example.com', user=jane)
     >>> consumer.save()
 
 
@@ -546,7 +546,7 @@ We need to create the Protected Resource and the Consumer first::
     >>> CONSUMER_KEY = 'dpf43f3p2l4k3l03'
     >>> CONSUMER_SECRET = 'kd94hf93k423kf44'
     >>> consumer = Consumer(key=CONSUMER_KEY, secret=CONSUMER_SECRET, 
-    ...                     name='printer.example.com')
+    ...                     name='printer.example.com', user=jane)
     >>> consumer.save()
 
 
