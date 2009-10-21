@@ -53,7 +53,8 @@ class Consumer(models.Model):
         """
         key = generate_random(length=KEY_SIZE)
         secret = generate_random(length=SECRET_SIZE)
-        while Consumer.objects.filter(key__exact=key, secret__exact=secret).count():
+        while Consumer.objects.filter(models.Q(key__exact=key) | models.Q(secret__exact=secret)).count():
+            key = generate_random(length=KEY_SIZE)
             secret = generate_random(length=SECRET_SIZE)
         self.key = key
         self.secret = secret
@@ -107,7 +108,8 @@ class Token(models.Model):
         """
         key = generate_random(length=KEY_SIZE)
         secret = generate_random(length=SECRET_SIZE)
-        while Token.objects.filter(key__exact=key, secret__exact=secret).count():
+        while Token.objects.filter(models.Q(key__exact=key) | models.Q(secret__exact=secret)).count():
+            key = generate_random(length=KEY_SIZE)
             secret = generate_random(length=SECRET_SIZE)
         self.key = key
         self.secret = secret
