@@ -1,7 +1,8 @@
 from oauth.oauth import OAuthError
 
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import (
+    HttpResponse, HttpResponseBadRequest, HttpResponseRedirect)
 from django.utils.translation import ugettext as _
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import get_callable
