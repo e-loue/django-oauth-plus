@@ -18,8 +18,14 @@ def initialize_server_request(request):
         auth_header = {'Authorization': request.META['Authorization']}
     elif 'HTTP_AUTHORIZATION' in request.META:
         auth_header =  {'Authorization': request.META['HTTP_AUTHORIZATION']}
-    
-    parameters = dict(request.REQUEST.items())
+   
+    # imported from timetric's github
+    parameters = request.GET.copy()
+    if (request.method == "POST" and
+        request.META.get('CONTENT_TYPE') in ["application/x-www-form-urlencoded", None]):
+        # a QueryDict update will preserve multiple values.
+        parameters.update(request.POST)
+
     oauth_request = OAuthRequest.from_request(request.method, 
                                               request.build_absolute_uri(), 
                                               headers=auth_header,
