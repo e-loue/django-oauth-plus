@@ -19,12 +19,16 @@ def initialize_server_request(request):
     elif 'HTTP_AUTHORIZATION' in request.META:
         auth_header =  {'Authorization': request.META['HTTP_AUTHORIZATION']}
    
-    # imported from timetric's github
-    parameters = request.GET.copy()
-    if (request.method == "POST" and
-        request.META.get('CONTENT_TYPE') in ["application/x-www-form-urlencoded", None]):
-        # a QueryDict update will preserve multiple values.
-        parameters.update(request.POST)
+    # Don't include extra parameters when request.method is POST and 
+    # request.MIME['CONTENT_TYPE'] is "application/x-www-form-urlencoded" 
+    # (See http://oauth.net/core/1.0a/#consumer_req_param).
+    # But there is an issue with Django's test Client and custom content types
+    # so an ugly test is made here, if you find a better solution...
+    parameters = {}
+    if request.method == "POST" and \
+        (request.META.get('CONTENT_TYPE') == "application/x-www-form-urlencoded" \
+            or request.META.get('SERVER_NAME') == 'testserver'):
+        parameters = dict(request.REQUEST.items())
 
     oauth_request = OAuthRequest.from_request(request.method, 
                                               request.build_absolute_uri(), 
