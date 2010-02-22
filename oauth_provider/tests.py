@@ -472,6 +472,8 @@ If Jane deletes the Access Token of printer.example.com, the Consumer will not
 be able to access the Protected Resource anymore::
 
     >>> access_token.delete()
+    >>> # Note that an "Invalid signature" error will be raised here if the
+    >>> # token is not revoked by Jane because we reuse a previously used one.
     >>> parameters['oauth_signature'] = signature
     >>> parameters['oauth_nonce'] = 'yetanotheraccessresourcenonce'
     >>> response = c.get("/oauth/photo/", parameters)
@@ -852,6 +854,8 @@ If Jane deletes the Access Token of printer.example.com, the Consumer will not
 be able to access the Protected Resource anymore::
 
     >>> access_token.delete()
+    >>> # Note that an "Invalid signature" error will be raised here if the
+    >>> # token is not revoked by Jane because we reuse a previously used one.
     >>> parameters['oauth_signature'] = signature
     >>> parameters['oauth_nonce'] = 'yetanotheraccessresourcenonce'
     >>> response = c.get("/oauth/photo/", parameters)
