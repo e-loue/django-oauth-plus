@@ -90,10 +90,10 @@ class Token(models.Model):
         token_dict = {
             'oauth_token': self.key, 
             'oauth_token_secret': self.secret,
-            'oauth_callback_confirmed': 'true',
+            'oauth_callback_confirmed': self.callback_confirmed and 'true' or 'error'
         }
         if self.verifier:
-            token_dict.update({ 'oauth_verifier': self.verifier })
+            token_dict['oauth_verifier'] = self.verifier
 
         if only_key:
             del token_dict['oauth_token_secret']
