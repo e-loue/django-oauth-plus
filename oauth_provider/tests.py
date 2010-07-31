@@ -132,374 +132,6 @@ can run tests from this example with this command::
     ...
 
 
-Protocol Example 1.0
-====================
-
-.. warning::
-    DUE TO THE SECURITY ISSUE, THIS EXAMPLE IS NOT THE RECOMMENDED WAY ANYMORE.
-    SEE BELOW FOR A MORE ROBUST EXAMPLE WHICH IS 1.0a COMPLIANT.
-
-In this example, the Service Provider photos.example.net is a photo sharing 
-website, and the Consumer printer.example.com is a photo printing website. 
-Jane, the User, would like printer.example.com to print the private photo 
-vacation.jpg stored at photos.example.net.
-
-When Jane signs-into photos.example.net using her username and password, she 
-can access the photo by going to the URL 
-http://photos.example.net/photo?file=vacation.jpg. Other Users cannot access 
-that photo, and Jane does not want to share her username and password with 
-printer.example.com.
-
-The requests in this example use the URL query method when sending parameters. 
-This is done to simplify the example and should not be taken as an endorsement 
-of one method over the others.
-
-An account for Jane is necessary::
-
-    >>> from django.contrib.auth.models import User
-    >>> jane = User.objects.create_user('jane', 'jane@example.com', 'toto')
-
-
-Documentation and Registration
-------------------------------
-
-The Service Provider documentation explains how to register for a Consumer Key 
-and Consumer Secret, and declares the following URLs:
-
-    * Request Token URL:
-      http://photos.example.net/request_token, using HTTP POST
-    * User Authorization URL:
-      http://photos.example.net/authorize, using HTTP GET
-    * Access Token URL:
-      http://photos.example.net/access_token, using HTTP POST
-    * Photo (Protected Resource) URL:
-      http://photos.example.net/photo with required parameter file and 
-      optional parameter size
-
-The Service Provider declares support for the HMAC-SHA1 signature method for 
-all requests, and PLAINTEXT only for secure (HTTPS) requests.
-
-The Consumer printer.example.com already established a Consumer Key and 
-Consumer Secret with photos.example.net and advertizes its printing services 
-for photos stored on photos.example.net. The Consumer registration is:
-
-    * Consumer Key: dpf43f3p2l4k3l03
-    * Consumer Secret: kd94hf93k423kf44
-
-We need to create the Protected Resource and the Consumer first::
-
-    >>> from oauth_provider.models import Resource, Consumer
-    >>> resource = Resource(name='photos', url='/oauth/photo/')
-    >>> resource.save()
-    >>> CONSUMER_KEY = 'dpf43f3p2l4k3l03'
-    >>> CONSUMER_SECRET = 'kd94hf93k423kf44'
-    >>> consumer = Consumer(key=CONSUMER_KEY, secret=CONSUMER_SECRET, 
-    ...                     name='printer.example.com', user=jane)
-    >>> consumer.save()
-
-
-Obtaining a Request Token
--------------------------
-
-After Jane informs printer.example.com that she would like to print her 
-vacation photo stored at photos.example.net, the printer website tries to 
-access the photo and receives HTTP 401 Unauthorized indicating it is private. 
-The Service Provider includes the following header with the response::
-
-    >>> from django.test.client import Client
-    >>> c = Client()
-    >>> response = c.get("/oauth/request_token/")
-    >>> response.status_code
-    401
-    >>> # depends on REALM_KEY_NAME Django setting
-    >>> response._headers['www-authenticate']
-    ('WWW-Authenticate', 'OAuth realm=""')
-    >>> response.content
-    'Invalid request parameters.'
-
-The Consumer sends the following HTTP POST request to the Service Provider::
-
-    >>> import time
-    >>> parameters = {
-    ...     'oauth_consumer_key': CONSUMER_KEY,
-    ...     'oauth_signature_method': 'PLAINTEXT',
-    ...     'oauth_signature': '%s&' % CONSUMER_SECRET,
-    ...     'oauth_timestamp': str(int(time.time())),
-    ...     'oauth_nonce': 'requestnonce',
-    ...     'oauth_version': '1.0',
-    ...     'scope': 'photos', # custom argument to specify Protected Resource
-    ... }
-    >>> response = c.get("/oauth/request_token/", parameters)
-
-The Service Provider checks the signature and replies with an unauthorized 
-Request Token in the body of the HTTP response::
-
-    >>> response.status_code
-    200
-    >>> response.content
-    'oauth_token_secret=...&oauth_token=...'
-    >>> from oauth_provider.models import Token
-    >>> token = list(Token.objects.all())[-1]
-    >>> token.key in response.content, token.secret in response.content
-    (True, True)
-
-If you try to access a resource with a wrong scope, it will return an error::
-
-    >>> parameters['scope'] = 'videos'
-    >>> response = c.get("/oauth/request_token/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Resource videos does not exist.'
-
-
-Requesting User Authorization
------------------------------
-
-The Consumer redirects Jane's browser to the Service Provider User 
-Authorization URL to obtain Jane's approval for accessing her private photos.
-
-The Service Provider asks Jane to sign-in using her username and password::
-
-    >>> parameters = {
-    ...     'oauth_token': token.key,
-    ...     'oauth_callback': 'http://printer.example.com/request_token_ready',
-    ... }
-    >>> response = c.get("/oauth/authorize/", parameters)
-    >>> response.status_code
-    302
-    >>> response['Location']
-    'http://.../accounts/login/?next=/oauth/authorize/%3Foauth_token%3D...%26oauth_callback%3Dhttp...'
-    >>> token.key in response['Location']
-    True
-    
-If successful, asks her if she approves granting printer.example.com access to 
-her private photos. If Jane approves the request, the Service Provider 
-redirects her back to the Consumer's callback URL::
-
-    >>> c.login(username='jane', password='toto')
-    True
-    >>> token.is_approved
-    0
-    >>> response = c.get("/oauth/authorize/", parameters)
-    >>> response.status_code
-    200
-    >>> response.content
-    'Fake authorize view for printer.example.com.'
-    
-    >>> # fake authorization by the user
-    >>> parameters['authorize_access'] = 1
-    >>> # TODO: find a proper way to use test Client's content_type arg.
-    >>> response = c.post("/oauth/authorize/", parameters)#, content_type="application/x-www-form-urlencoded")
-    >>> response.status_code
-    302
-    >>> response['Location']
-    'http://printer.example.com/request_token_ready?oauth_token=...'
-    >>> token = list(Token.objects.all())[-1]
-    >>> token.key in response['Location']
-    True
-    >>> token.is_approved
-    1
-    
-    >>> # without session parameter (previous POST removed it)
-    >>> response = c.post("/oauth/authorize/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Action not allowed.'
-    
-    >>> # fake access not granted by the user (set session parameter again)
-    >>> response = c.get("/oauth/authorize/", parameters)
-    >>> parameters['authorize_access'] = 0
-    >>> response = c.post("/oauth/authorize/", parameters)
-    >>> response.status_code
-    302
-    >>> response['Location']
-    'http://printer.example.com/request_token_ready?error=Access%20not%20granted%20by%20user.'
-    >>> c.logout()
-
-The callback argument is optional, you can specify your own default callback
-view with ``OAUTH_CALLBACK_VIEW`` setting::
-
-    >>> parameters = {
-    ...     'oauth_token': token.key,
-    ... }
-    >>> c.login(username='jane', password='toto')
-    True
-    >>> response = c.get("/oauth/authorize/", parameters)
-    >>> parameters['authorize_access'] = 0
-    >>> response = c.post("/oauth/authorize/", parameters)
-    >>> response.status_code
-    200
-    >>> response.content
-    'Fake callback view.'
-    >>> c.logout()
-
-
-Obtaining an Access Token
--------------------------
-
-Now that the Consumer knows Jane approved the Request Token, it asks the 
-Service Provider to exchange it for an Access Token::
-
-    >>> c = Client()
-    >>> parameters = {
-    ...     'oauth_consumer_key': CONSUMER_KEY,
-    ...     'oauth_token': token.key,
-    ...     'oauth_signature_method': 'PLAINTEXT',
-    ...     'oauth_signature': '%s&%s' % (CONSUMER_SECRET, token.secret),
-    ...     'oauth_timestamp': str(int(time.time())),
-    ...     'oauth_nonce': 'accessnonce',
-    ...     'oauth_version': '1.0',
-    ... }
-    >>> response = c.get("/oauth/access_token/", parameters)
-
-.. note::
-    You can use HTTP Authorization header, if you provide both, header will be
-    checked before parameters. It depends on your needs.
-
-The Service Provider checks the signature and replies with an Access Token in 
-the body of the HTTP response::
-
-    >>> response.status_code
-    200
-    >>> response.content
-    'oauth_token_secret=...&oauth_token=...'
-    >>> access_token = list(Token.objects.filter(token_type=Token.ACCESS))[-1]
-    >>> access_token.key in response.content
-    True
-    >>> access_token.secret in response.content
-    True
-    >>> access_token.user.username
-    u'jane'
-
-The Consumer will not be able to request another Access Token with the same
-Nonce::
-
-    >>> from oauth_provider.models import Nonce
-    >>> Nonce.objects.all()
-    [<Nonce: Nonce accessnonce for ...>]
-    >>> response = c.get("/oauth/access_token/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Nonce already used: accessnonce'
-
-The Consumer will not be able to request an Access Token if the token is not
-approved::
-
-    >>> parameters['oauth_nonce'] = 'anotheraccessnonce'
-    >>> token.is_approved = False
-    >>> token.save()
-    >>> response = c.get("/oauth/access_token/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Consumer key or token key does not match. Make sure your request token is approved. Check your verifier too if you use OAuth 1.0a.'
-
-
-Accessing Protected Resources
------------------------------
-
-The Consumer is now ready to request the private photo. Since the photo URL is 
-not secure (HTTP), it must use HMAC-SHA1.
-
-Generating Signature Base String
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To generate the signature, it first needs to generate the Signature Base 
-String. The request contains the following parameters (oauth_signature 
-excluded) which are ordered and concatenated into a normalized string::
-
-    >>> parameters = {
-    ...     'oauth_consumer_key': CONSUMER_KEY,
-    ...     'oauth_token': access_token.key,
-    ...     'oauth_signature_method': 'HMAC-SHA1',
-    ...     'oauth_timestamp': str(int(time.time())),
-    ...     'oauth_nonce': 'accessresourcenonce',
-    ...     'oauth_version': '1.0',
-    ... }
-
-
-Calculating Signature Value
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-HMAC-SHA1 produces the following digest value as a base64-encoded string 
-(using the Signature Base String as text and kd94hf93k423kf44&pfkkdhi9sl3r4s00 
-as key)::
-
-    >>> from oauth.oauth import OAuthRequest, OAuthSignatureMethod_HMAC_SHA1
-    >>> oauth_request = OAuthRequest.from_token_and_callback(access_token,
-    ...     http_url='http://testserver/oauth/photo/', parameters=parameters)
-    >>> signature_method = OAuthSignatureMethod_HMAC_SHA1()
-    >>> signature = signature_method.build_signature(oauth_request, consumer, 
-    ...                                                 access_token)
-
-
-Requesting Protected Resource
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-All together, the Consumer request for the photo is::
-
-    >>> parameters['oauth_signature'] = signature
-    >>> response = c.get("/oauth/photo/", parameters)
-    >>> response.status_code
-    200
-    >>> response.content
-    'Protected Resource access!'
-
-Otherwise, an explicit error will be raised::
-
-    >>> parameters['oauth_signature'] = 'wrongsignature'
-    >>> parameters['oauth_nonce'] = 'anotheraccessresourcenonce'
-    >>> response = c.get("/oauth/photo/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Invalid signature. Expected signature base string: GET&http%3A%2F%2F...%2Foauth%2Fphoto%2F&oauth_...'
-
-    >>> response = c.get("/oauth/photo/")
-    >>> response.status_code
-    401
-    >>> response.content
-    'Invalid request parameters.'
-
-
-Revoking Access
----------------
-
-If Jane deletes the Access Token of printer.example.com, the Consumer will not 
-be able to access the Protected Resource anymore::
-
-    >>> access_token.delete()
-    >>> # Note that an "Invalid signature" error will be raised here if the
-    >>> # token is not revoked by Jane because we reuse a previously used one.
-    >>> parameters['oauth_signature'] = signature
-    >>> parameters['oauth_nonce'] = 'yetanotheraccessresourcenonce'
-    >>> response = c.get("/oauth/photo/", parameters)
-    >>> response.status_code
-    401
-    >>> response.content
-    'Invalid access token: ...'
-
-
-Clean up
---------
-
-Remove created models' instances to be able to launch 1.0a tests just below::
-
-    >>> Token.objects.all().delete()
-    >>> Resource.objects.all().delete()
-    >>> Consumer.objects.all().delete()
-    >>> Nonce.objects.all().delete()
-    >>> User.objects.all().delete()
-
-
-
-
-
-
-
 Protocol Example 1.0a
 =====================
 
@@ -604,6 +236,7 @@ Request Token in the body of the HTTP response::
 If you try to access a resource with a wrong scope, it will return an error::
 
     >>> parameters['scope'] = 'videos'
+    >>> parameters['oauth_nonce'] = 'requestnoncevideos'
     >>> response = c.get("/oauth/request_token/", parameters)
     >>> response.status_code
     401
@@ -614,6 +247,7 @@ If you try to access a resource with a wrong scope, it will return an error::
 If you try to put a wrong callback, it will return an error::
 
     >>> parameters['oauth_callback'] = 'wrongcallback'
+    >>> parameters['oauth_nonce'] = 'requestnoncewrongcallback'
     >>> response = c.get("/oauth/request_token/", parameters)
     >>> response.status_code
     401
@@ -661,7 +295,7 @@ redirects her back to the Consumer's callback URL::
     302
     >>> response['Location']
     'http://printer.example.com/request_token_ready?oauth_verifier=...&oauth_token=...'
-    >>> token = list(Token.objects.all())[-1]
+    >>> token = Token.objects.get(key=token.key)
     >>> token.key in response['Location']
     True
     >>> token.is_approved
@@ -681,7 +315,7 @@ redirects her back to the Consumer's callback URL::
     >>> response.status_code
     302
     >>> response['Location']
-    'http://printer.example.com/request_token_ready?error=Access%20not%20granted%20by%20user.'
+    'http://printer.example.com/request_token_ready?oauth_verifier=...&error=Access+not+granted+by+user.'
     >>> c.logout()
 
 With OAuth 1.0a, the callback argument can be set to "oob" (out-of-band), 
@@ -722,6 +356,7 @@ Service Provider to exchange it for an Access Token::
     ...     'oauth_nonce': 'accessnonce',
     ...     'oauth_version': '1.0',
     ...     'oauth_verifier': token.verifier,
+    ...     'scope': 'photos',
     ... }
     >>> response = c.get("/oauth/access_token/", parameters)
 
@@ -745,39 +380,47 @@ the body of the HTTP response::
     u'jane'
 
 The Consumer will not be able to request another Access Token with the same
-Nonce::
+parameters because the Request Token has been deleted once Access Token is
+created::
 
-    >>> from oauth_provider.models import Nonce
-    >>> Nonce.objects.all()
-    [<Nonce: Nonce accessnonce for ...>]
     >>> response = c.get("/oauth/access_token/", parameters)
     >>> response.status_code
-    401
+    400
     >>> response.content
-    'Nonce already used: accessnonce'
+    'Invalid request token.'
 
-Nor with a missing/invalid verifier::
+The Consumer will not be able to request another Access Token with a missing
+or invalid verifier::
 
-    >>> parameters['oauth_nonce'] = 'yetanotheraccessnonce'
+    >>> new_request_token = Token.objects.create_token(
+    ...     token_type=Token.REQUEST,
+    ...     timestamp=str(int(time.time())),
+    ...     consumer=Consumer.objects.get(key=CONSUMER_KEY),
+    ...     user=jane,
+    ...     resource=Resource.objects.get(name='photos'))
+    >>> new_request_token.is_approved = True
+    >>> new_request_token.save()
+    >>> parameters['oauth_token'] = new_request_token.key
+    >>> parameters['oauth_signature'] = '%s&%s' % (CONSUMER_SECRET, new_request_token.secret)
     >>> parameters['oauth_verifier'] = 'invalidverifier'
     >>> response = c.get("/oauth/access_token/", parameters)
     >>> response.status_code
-    401
+    400
     >>> response.content
-    'Consumer key or token key does not match. Make sure your request token is approved. Check your verifier too if you use OAuth 1.0a.'
-    >>> parameters['oauth_verifier'] = token.verifier # restore
+    'Invalid OAuth verifier.'
+    >>> parameters['oauth_verifier'] = new_request_token.verifier # restore
 
 The Consumer will not be able to request an Access Token if the token is not
 approved::
 
+    >>> new_request_token.is_approved = False
+    >>> new_request_token.save()
     >>> parameters['oauth_nonce'] = 'anotheraccessnonce'
-    >>> token.is_approved = False
-    >>> token.save()
     >>> response = c.get("/oauth/access_token/", parameters)
     >>> response.status_code
-    401
+    400
     >>> response.content
-    'Consumer key or token key does not match. Make sure your request token is approved. Check your verifier too if you use OAuth 1.0a.'
+    'Request Token not approved by the user.'
 
 
 Accessing Protected Resources
@@ -810,12 +453,11 @@ HMAC-SHA1 produces the following digest value as a base64-encoded string
 (using the Signature Base String as text and kd94hf93k423kf44&pfkkdhi9sl3r4s00 
 as key)::
 
-    >>> from oauth.oauth import OAuthRequest, OAuthSignatureMethod_HMAC_SHA1
-    >>> oauth_request = OAuthRequest.from_token_and_callback(access_token,
+    >>> import oauth2 as oauth
+    >>> oauth_request = oauth.Request.from_token_and_callback(access_token,
     ...     http_url='http://testserver/oauth/photo/', parameters=parameters)
-    >>> signature_method = OAuthSignatureMethod_HMAC_SHA1()
-    >>> signature = signature_method.build_signature(oauth_request, consumer, 
-    ...                                                 access_token)
+    >>> signature_method = oauth.SignatureMethod_HMAC_SHA1()
+    >>> signature = signature_method.sign(oauth_request, consumer, access_token)
 
 
 Requesting Protected Resource

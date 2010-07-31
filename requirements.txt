@@ -1,0 +1,4 @@
+Django==1.2.1
+httplib2==0.6.0
+-e git://github.com/simplegeo/python-oauth2@1f9640f8467a90fcc20be6bbb8909d21bad308f6#egg=oauth2-1.2.1-py2.6-dev
+wsgiref==0.1.2

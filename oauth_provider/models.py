@@ -1,13 +1,15 @@
 import urllib
 import urlparse
 from time import time
+import oauth2 as oauth
 
 from django.db import models
 from django.contrib.auth.models import User
 
 from managers import TokenManager, ConsumerManager, ResourceManager
 from consts import KEY_SIZE, SECRET_SIZE, CONSUMER_KEY_SIZE, CONSUMER_STATES,\
-                   PENDING, VERIFIER_SIZE, MAX_URL_LENGTH
+                   PENDING, VERIFIER_SIZE, MAX_URL_LENGTH, OUT_OF_BAND
+from utils import check_valid_callback
 
 generate_random = User.objects.make_random_password
 
@@ -129,3 +131,13 @@ class Token(models.Model):
             return urlparse.urlunparse((scheme, netloc, path, params,
                 query, fragment))
         return self.callback
+
+    def set_callback(self, callback):
+        if callback != OUT_OF_BAND: # out of band, says "we can't do this!"
+            if check_valid_callback(callback):
+                self.callback = callback
+                self.callback_confirmed = True
+                self.save()
+            else:
+                raise oauth.Error('Invalid callback URL.')
+        

@@ -1,4 +1,4 @@
-from oauth.oauth import OAuthError
+from oauth2 import Error
 
 try:
     from functools import wraps, update_wrapper
@@ -8,8 +8,9 @@ except ImportError:
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.translation import ugettext as _
 
-from utils import initialize_server_request, send_oauth_error
+from utils import initialize_server_request, send_oauth_error, get_oauth_request
 from consts import OAUTH_PARAMETERS_NAMES
+from store import store, InvalidTokenError
 
 def oauth_required(view_func=None, resource_name=None):
     return CheckOAuth(view_func, resource_name)
@@ -35,17 +36,25 @@ class CheckOAuth(object):
     
     def __call__(self, request, *args, **kwargs):
         if self.is_valid_request(request):
+            oauth_request = get_oauth_request(request)
+            consumer = store.get_consumer(request, oauth_request, 
+                            oauth_request.get_parameter('oauth_consumer_key'))
             try:
-                consumer, token, parameters = self.validate_token(request)
-            except OAuthError, e:
+                token = store.get_access_token(request, oauth_request, 
+                                consumer, oauth_request.get_parameter('oauth_token'))
+            except InvalidTokenError:
+                return send_oauth_error(Error(_('Invalid access token: %s') % oauth_request.get_parameter('oauth_token')))
+            try:
+                parameters = self.validate_token(request, consumer, token)
+            except Error, e:
                 return send_oauth_error(e)
             
             if self.resource_name and token.resource.name != self.resource_name:
-                return send_oauth_error(OAuthError(_('You are not allowed to access this resource.')))
+                return send_oauth_error(Error(_('You are not allowed to access this resource.')))
             elif consumer and token:
                 return self.view_func(request, *args, **kwargs)
         
-        return send_oauth_error(OAuthError(_('Invalid request parameters.')))
+        return send_oauth_error(Error(_('Invalid request parameters.')))
 
     @staticmethod
     def is_valid_request(request):
@@ -60,6 +69,6 @@ class CheckOAuth(object):
         return is_in(auth_params) or is_in(request.REQUEST)
 
     @staticmethod
-    def validate_token(request):
+    def validate_token(request, consumer, token):
         oauth_server, oauth_request = initialize_server_request(request)
-        return oauth_server.verify_request(oauth_request)
+        return oauth_server.verify_request(oauth_request, consumer, token)
