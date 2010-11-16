@@ -1,3 +1,4 @@
+import uuid
 import urllib
 import urlparse
 from time import time
@@ -53,13 +54,8 @@ class Consumer(models.Model):
         Used to generate random key/secret pairings.
         Use this after you've added the other data in place of save().
         """
-        key = generate_random(length=KEY_SIZE)
-        secret = generate_random(length=SECRET_SIZE)
-        while Consumer.objects.filter(models.Q(key__exact=key) | models.Q(secret__exact=secret)).count():
-            key = generate_random(length=KEY_SIZE)
-            secret = generate_random(length=SECRET_SIZE)
-        self.key = key
-        self.secret = secret
+        self.key = uuid.uuid4().hex
+        self.secret = generate_random(length=SECRET_SIZE)
         self.save()
 
 
@@ -108,13 +104,8 @@ class Token(models.Model):
         Used to generate random key/secret pairings. 
         Use this after you've added the other data in place of save(). 
         """
-        key = generate_random(length=KEY_SIZE)
-        secret = generate_random(length=SECRET_SIZE)
-        while Token.objects.filter(models.Q(key__exact=key) | models.Q(secret__exact=secret)).count():
-            key = generate_random(length=KEY_SIZE)
-            secret = generate_random(length=SECRET_SIZE)
-        self.key = key
-        self.secret = secret
+        self.key = uuid.uuid4().hex
+        self.secret = generate_random(length=SECRET_SIZE)
         self.save()
 
     def get_callback_url(self):
