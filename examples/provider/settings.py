@@ -3,8 +3,10 @@ ROOT_PATH = os.path.dirname(__file__)
 
 TEMPLATE_DEBUG = DEBUG = True
 MANAGERS = ADMINS = ()
-DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = os.path.join(ROOT_PATH, 'testdb.sqlite')
+#DATABASE_ENGINE = 'sqlite3'
+#DATABASE_NAME = os.path.join(ROOT_PATH, 'testdb.sqlite')
+DATABASE_ENGINE = 'postgresql_psycopg2'
+DATABASE_NAME = 'oauthprovider'
 
 TIME_ZONE = 'America/Chicago'
 LANGUAGE_CODE = 'en-us'
