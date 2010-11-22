@@ -286,7 +286,7 @@ redirects her back to the Consumer's callback URL::
     >>> response.status_code
     200
     >>> response.content
-    'Fake authorize view for printer.example.com.'
+    'Fake authorize view for printer.example.com with params: oauth_token=...'
     
     >>> # fake authorization by the user
     >>> parameters['authorize_access'] = 1

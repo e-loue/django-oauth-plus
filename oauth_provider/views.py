@@ -152,7 +152,7 @@ def fake_authorize_view(request, token, callback, params):
     
     You need to define your own in ``settings.OAUTH_AUTHORIZE_VIEW``.
     """
-    return HttpResponse('Fake authorize view for %s.' % token.consumer.name)
+    return HttpResponse('Fake authorize view for %s with params: %s.' % (token.consumer.name, params))
 
 def fake_callback_view(request, **args):
     """
