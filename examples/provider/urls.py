@@ -1,4 +1,8 @@
-from django.conf.urls.defaults import *
+# Django 1.6 fix
+try:
+    from django.conf.urls import *
+except ImportError:
+    from django.conf.urls.defaults import *
 from django.contrib import admin
 
 from oauth_provider.views import protected_resource_example
